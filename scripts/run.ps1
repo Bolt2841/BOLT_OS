@@ -168,21 +168,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-ExecutionPolicy", "Bypass", 
 Write-Host "[INFO] Starting QEMU..." -ForegroundColor DarkCyan
 Write-Host ""
 
-if ($BootFromISO) {
-    # Boot from ISO with harddisk attached for installation
-    & $QEMU `
-        -m 256 `
-        -cpu pentium3 `
-        -drive file=$HardDisk,format=raw,if=ide,index=0,media=disk `
-        -cdrom $ISOImage `
-        -boot d `
-        -vga std `
-        -device e1000,netdev=net0 `
-        -netdev user,id=net0 `
-        -device AC97 `
-        -rtc base=localtime `
-        -serial file:$SerialLog
-} else {
+if ($BootFromHDD) {
     # Boot from HDD (normal mode)
     & $QEMU `
         -m 256 `
@@ -190,6 +176,20 @@ if ($BootFromISO) {
         -drive file=$HardDisk,format=raw,if=ide,index=0,media=disk `
         -drive if=ide,index=1,media=cdrom `
         -boot c `
+        -vga std `
+        -device e1000,netdev=net0 `
+        -netdev user,id=net0 `
+        -device AC97 `
+        -rtc base=localtime `
+        -serial file:$SerialLog
+} else {
+    # Boot from ISO with harddisk attached for installation
+    & $QEMU `
+        -m 256 `
+        -cpu pentium3 `
+        -drive file=$HardDisk,format=raw,if=ide,index=0,media=disk `
+        -cdrom $ISOImage `
+        -boot d `
         -vga std `
         -device e1000,netdev=net0 `
         -netdev user,id=net0 `
