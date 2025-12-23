@@ -687,22 +687,47 @@ void stat_cmd(int argc, char** argv) {
 }
 
 // Helper for tree command
-static void tree_recurse(const char* path, int depth, int* file_count, int* dir_count) {
+static void tree_recurse(const char* path, int depth, int* file_count, int* dir_count, bool* last_at_depth) {
     if (depth > 8) return;  // Prevent infinite recursion
     
     u32 fd = 0;
     if (VFS::opendir(path, fd) != VFSResult::Success) return;
     
+    // First, count entries to know when we're at the last one
     FileInfo info;
+    int entry_count = 0;
+    while (VFS::readdir(fd, info) == VFSResult::Success) {
+        if (str::cmp(info.name, ".") == 0 || str::cmp(info.name, "..") == 0) continue;
+        entry_count++;
+    }
+    VFS::closedir(fd);
+    
+    // Reopen and iterate
+    if (VFS::opendir(path, fd) != VFSResult::Success) return;
+    
+    int current_entry = 0;
     while (VFS::readdir(fd, info) == VFSResult::Success) {
         // Skip . and ..
         if (str::cmp(info.name, ".") == 0 || str::cmp(info.name, "..") == 0) continue;
         
-        // Print indent
+        current_entry++;
+        bool is_last = (current_entry == entry_count);
+        
+        // Print indent with proper tree lines
         for (int i = 0; i < depth; i++) {
-            Console::print("│   ");
+            if (last_at_depth[i]) {
+                Console::print("    ");      // No more siblings at this level
+            } else {
+                Console::print("|   ");      // More siblings coming
+            }
         }
-        Console::print("├── ");
+        
+        // Print branch
+        if (is_last) {
+            Console::print("`-- ");          // Last item uses corner
+        } else {
+            Console::print("|-- ");          // More items follow
+        }
         
         if (info.is_directory()) {
             Console::set_color(Color::LightBlue);
@@ -715,7 +740,8 @@ static void tree_recurse(const char* path, int depth, int* file_count, int* dir_
             if (subpath[str::len(subpath) - 1] != '/') str::cat(subpath, "/");
             str::cat(subpath, info.name);
             
-            tree_recurse(subpath, depth + 1, file_count, dir_count);
+            last_at_depth[depth] = is_last;
+            tree_recurse(subpath, depth + 1, file_count, dir_count, last_at_depth);
         } else {
             Console::set_color(Color::White);
             Console::println(info.name);
@@ -753,7 +779,8 @@ void tree(int argc, char** argv) {
     }
     
     int file_count = 0, dir_count = 0;
-    tree_recurse(path, 0, &file_count, &dir_count);
+    bool last_at_depth[16] = {false};  // Track if we're at last item per depth
+    tree_recurse(path, 0, &file_count, &dir_count, last_at_depth);
     
     Console::set_color(Color::LightGray);
     Console::print("\n");

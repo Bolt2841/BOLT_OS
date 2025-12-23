@@ -2,8 +2,13 @@
 ; BOLT OS - Interrupt Service Routines (Assembly Stubs)
 ; ===========================================================================
 ; These stubs save CPU state and call C handlers
+;
+; Uses linker script section: .text.isr for interrupt handlers
+; ===========================================================================
 
 [bits 32]
+
+section .text.isr
 
 ; Macro for ISRs that don't push error codes
 %macro ISR_NOERR 1

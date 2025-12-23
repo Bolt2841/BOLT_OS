@@ -263,20 +263,20 @@ if (-not (Test-Path $DriveImage)) {
 }
 
 # ==============================================================================
-# Compile Bootloader
+# Compile Bootloader (Unified)
 # ==============================================================================
 
+# Compile unified bootloader for floppy/HDD
 Write-Host ""
-Write-Host "[ASM ] boot.asm" -ForegroundColor Cyan
+Write-Host "[ASM ] boot.asm (floppy/HDD)" -ForegroundColor Cyan
 & $NASM -f bin "$ProjectRoot\boot.asm" -o "$BuildDir\boot.bin"
 if ($LASTEXITCODE -ne 0) { Write-Host "[ERROR] Bootloader failed" -ForegroundColor Red; exit 1 }
 
-# Compile HDD bootloader early so we can embed it
-Write-Host "[ASM ] boot_hdd.asm" -ForegroundColor Cyan
-& $NASM -f bin "$ProjectRoot\boot_hdd.asm" -o "$BuildDir\boot_hdd.bin"
-if ($LASTEXITCODE -ne 0) { Write-Host "[ERROR] HDD boot assembly failed" -ForegroundColor Red; exit 1 }
+# HDD uses the same unified bootloader
+Copy-Item "$BuildDir\boot.bin" "$BuildDir\boot_hdd.bin" -Force
+Write-Host "[INFO] Using unified bootloader for HDD" -ForegroundColor Gray
 
-# Generate bootloader_data.hpp from boot_hdd.bin
+# Generate bootloader_data.hpp from unified bootloader
 Write-Host "[GEN ] bootloader_data.hpp" -ForegroundColor Cyan
 $bootHddBytes = [System.IO.File]::ReadAllBytes("$BuildDir\boot_hdd.bin")
 
@@ -664,9 +664,9 @@ Write-Host "[INFO] Created bootable HDD: $bootableHddPath" -ForegroundColor Gree
 Write-Host ""
 Write-Host "[ISO ] Creating bootable ISO image..." -ForegroundColor Yellow
 
-# Assemble CD bootloader
-Write-Host "[ASM ] boot_cd.asm" -ForegroundColor Cyan
-& $NASM -f bin "$ProjectRoot\boot_cd.asm" -o "$BuildDir\boot_cd.bin"
+# Assemble CD bootloader from unified source with CDROM_MODE defined
+Write-Host "[ASM ] boot.asm -DCDROM_MODE (CD-ROM)" -ForegroundColor Cyan
+& $NASM -f bin -DCDROM_MODE "$ProjectRoot\boot.asm" -o "$BuildDir\boot_cd.bin"
 if ($LASTEXITCODE -ne 0) { Write-Host "[ERROR] CD boot assembly failed" -ForegroundColor Red; exit 1 }
 
 $bootCdBin = [System.IO.File]::ReadAllBytes("$BuildDir\boot_cd.bin")

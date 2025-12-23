@@ -2,6 +2,9 @@
 ; BOLT OS - Context Switch Assembly
 ; ===========================================================================
 ; Low-level context switch between tasks
+;
+; Uses linker script symbols:
+;   __stack_top - Initial kernel stack
 ; ===========================================================================
 
 [BITS 32]

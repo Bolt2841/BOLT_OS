@@ -1,8 +1,13 @@
 ; ===========================================================================
 ; BOLT OS - GDT Flush (Reload Segment Registers)
 ; ===========================================================================
+; Uses linker script section: .text for kernel code
+; ===========================================================================
 
 [bits 32]
+
+section .text
+
 global gdt_flush
 
 gdt_flush:
