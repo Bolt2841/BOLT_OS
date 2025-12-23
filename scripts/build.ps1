@@ -28,7 +28,7 @@ $DriveSize = 64  # MB
 # Helper Functions
 # ==============================================================================
 
-function Ensure-Directory {
+function New-DirectoryIfNotExists {
     param([string]$Path)
     if (-not (Test-Path $Path)) {
         New-Item -ItemType Directory -Path $Path -Force | Out-Null
@@ -43,7 +43,7 @@ function Get-OutputPath {
     return Join-Path $BuildDir $relativePath
 }
 
-function Create-FAT32Drive {
+function New-FAT32Drive {
     param([string]$ImagePath, [int]$SizeMB)
     
     Write-Host ""
@@ -235,29 +235,29 @@ Write-Host "========================================" -ForegroundColor Yellow
 Write-Host ""
 
 # Create directory structure
-Ensure-Directory $BuildDir
-Ensure-Directory (Join-Path $BuildDir "core\arch")
-Ensure-Directory (Join-Path $BuildDir "core\memory")
-Ensure-Directory (Join-Path $BuildDir "core\sched")
-Ensure-Directory (Join-Path $BuildDir "core\sys")
-Ensure-Directory (Join-Path $BuildDir "drivers\video")
-Ensure-Directory (Join-Path $BuildDir "drivers\input")
-Ensure-Directory (Join-Path $BuildDir "drivers\timer")
-Ensure-Directory (Join-Path $BuildDir "drivers\serial")
-Ensure-Directory (Join-Path $BuildDir "drivers\bus")
-Ensure-Directory (Join-Path $BuildDir "drivers\storage")
-Ensure-Directory (Join-Path $BuildDir "fs")
-Ensure-Directory (Join-Path $BuildDir "storage")
-Ensure-Directory (Join-Path $BuildDir "lib")
-Ensure-Directory (Join-Path $BuildDir "shell\commands")
-Ensure-Directory $DriveDir
+New-DirectoryIfNotExists $BuildDir
+New-DirectoryIfNotExists (Join-Path $BuildDir "core\arch")
+New-DirectoryIfNotExists (Join-Path $BuildDir "core\memory")
+New-DirectoryIfNotExists (Join-Path $BuildDir "core\sched")
+New-DirectoryIfNotExists (Join-Path $BuildDir "core\sys")
+New-DirectoryIfNotExists (Join-Path $BuildDir "drivers\video")
+New-DirectoryIfNotExists (Join-Path $BuildDir "drivers\input")
+New-DirectoryIfNotExists (Join-Path $BuildDir "drivers\timer")
+New-DirectoryIfNotExists (Join-Path $BuildDir "drivers\serial")
+New-DirectoryIfNotExists (Join-Path $BuildDir "drivers\bus")
+New-DirectoryIfNotExists (Join-Path $BuildDir "drivers\storage")
+New-DirectoryIfNotExists (Join-Path $BuildDir "fs")
+New-DirectoryIfNotExists (Join-Path $BuildDir "storage")
+New-DirectoryIfNotExists (Join-Path $BuildDir "lib")
+New-DirectoryIfNotExists (Join-Path $BuildDir "shell\commands")
+New-DirectoryIfNotExists $DriveDir
 
 # ==============================================================================
 # Check/Create FAT32 Drive
 # ==============================================================================
 
 if (-not (Test-Path $DriveImage)) {
-    Create-FAT32Drive -ImagePath $DriveImage -SizeMB $DriveSize
+    New-FAT32Drive -ImagePath $DriveImage -SizeMB $DriveSize
 } else {
     Write-Host "[DRIVE] Using existing drive: $DriveImage" -ForegroundColor DarkGray
 }
@@ -340,7 +340,7 @@ foreach ($file in $asmFiles) {
     $src = Join-Path $KernelDir $file
     $obj = Get-OutputPath $file "_asm.o"
     
-    Ensure-Directory (Split-Path $obj -Parent)
+    New-DirectoryIfNotExists (Split-Path $obj -Parent)
     
     Write-Host "[ASM ] kernel/$file" -ForegroundColor Cyan
     & $NASM -f elf32 $src -o $obj
@@ -421,7 +421,7 @@ foreach ($file in $cppFiles) {
     $src = Join-Path $KernelDir $file
     $obj = Get-OutputPath $file ".o"
     
-    Ensure-Directory (Split-Path $obj -Parent)
+    New-DirectoryIfNotExists (Split-Path $obj -Parent)
     
     Write-Host "[CXX ] kernel/$file" -ForegroundColor Cyan
     & $GXX $CXXFLAGS.Split(" ") -I"$KernelDir" -c $src -o $obj
@@ -511,7 +511,6 @@ $bootHddBin[3] = [byte]$sectorsNeeded
 # We'll reserve 256 sectors (128KB) for kernel to allow growth
 
 $reservedKernelSectors = 256
-$kernelEndOffset = ($reservedKernelSectors + 1) * 512  # FAT32 starts here
 
 # Total disk size: 64MB
 $diskSizeMB = 64
